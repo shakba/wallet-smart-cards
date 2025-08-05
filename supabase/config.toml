@@ -1,1 +1,4 @@
 project_id = "cgtunlyhcwwrghvetmfq"
+
+[functions.generate-pass]
+verify_jwt = false

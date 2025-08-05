@@ -64,29 +64,38 @@ export function Dashboard({ onCreateNew, onEditPass }: DashboardProps) {
 
   const handleDownload = async (pass: Pass) => {
     try {
+      console.log('Starting download for pass:', pass.full_name);
+      
       const { data, error } = await supabase.functions.invoke('generate-pass', {
         body: { passData: pass }
       });
 
-      if (error) throw error;
+      console.log('Function response:', { data, error });
 
-      if (data?.downloadUrl) {
+      if (error) {
+        console.error('Function error:', error);
+        throw error;
+      }
+
+      if (data?.success && data?.downloadUrl) {
         // Create download link
         const link = document.createElement('a');
         link.href = data.downloadUrl;
-        link.download = `${pass.full_name.replace(/\s+/g, '_')}_business_card.pkpass`;
+        link.download = `${pass.full_name.replace(/\s+/g, '_')}_business_card.json`;
         link.click();
         
         toast({
           title: "Download Started",
-          description: "Your Apple Wallet pass is being downloaded",
+          description: "Your business card data has been downloaded",
         });
+      } else {
+        throw new Error(data?.message || 'Unknown error occurred');
       }
     } catch (error) {
       console.error('Download error:', error);
       toast({
         title: "Download Failed", 
-        description: "Failed to generate Apple Wallet pass",
+        description: `Failed to generate pass: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     }
