@@ -97,12 +97,18 @@ const Index = () => {
   };
 
   const handleSavePass = async () => {
+    console.log("=== SAVE PASS START ===");
+    console.log("User authenticated:", !!user);
+    console.log("User object:", user);
+    
     if (!user) {
+      console.log("No user found, redirecting to auth");
       navigate("/auth");
       return;
     }
 
     if (!formData.fullName || !formData.jobTitle) {
+      console.log("Missing required fields:", { fullName: formData.fullName, jobTitle: formData.jobTitle });
       toast({
         title: "Missing Information",
         description: "Please fill in your full name and job title",
