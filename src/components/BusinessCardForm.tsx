@@ -55,7 +55,7 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
 
   // Trigger handleFormChange whenever form data changes
   const watchedData = watch();
-  React.useEffect(() => {
+  useEffect(() => {
     handleFormChange();
   }, [watchedData, profileImage, companyLogo]);
 
