@@ -71,10 +71,12 @@ const Index = () => {
   };
 
   const uploadFile = async (file: File, bucket: string): Promise<string | null> => {
+    console.log(`Starting upload for ${bucket}:`, file.name);
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
     // Create user-specific folder path
     const filePath = `${user!.id}/${fileName}`;
+    console.log(`Upload path: ${filePath}`);
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)
@@ -85,10 +87,12 @@ const Index = () => {
       throw new Error(`Failed to upload ${bucket}: ${uploadError.message}`);
     }
 
+    console.log(`Successfully uploaded ${bucket}`);
     const { data } = supabase.storage
       .from(bucket)
       .getPublicUrl(filePath);
 
+    console.log(`Public URL for ${bucket}:`, data.publicUrl);
     return data.publicUrl;
   };
 
@@ -108,6 +112,9 @@ const Index = () => {
     }
 
     setSaving(true);
+    console.log("Starting save operation...");
+    console.log("Form data:", formData);
+    console.log("User:", user);
 
     try {
       let profileImageUrl = editingPass?.profile_image_url;
@@ -115,12 +122,16 @@ const Index = () => {
 
       // Upload profile image if provided
       if (formData.profileImage) {
+        console.log("Uploading profile image...");
         profileImageUrl = await uploadFile(formData.profileImage, "profile-images");
+        console.log("Profile image uploaded:", profileImageUrl);
       }
 
       // Upload company logo if provided
       if (formData.companyLogo) {
+        console.log("Uploading company logo...");
         companyLogoUrl = await uploadFile(formData.companyLogo, "company-logos");
+        console.log("Company logo uploaded:", companyLogoUrl);
       }
 
       const passData = {
@@ -137,20 +148,30 @@ const Index = () => {
         company_logo_url: companyLogoUrl,
       };
 
+      console.log("Saving to database with data:", passData);
+
       let result;
       if (editingPass) {
+        console.log("Updating existing pass...");
         result = await supabase
           .from("passes")
           .update(passData)
           .eq("id", editingPass.id);
       } else {
+        console.log("Inserting new pass...");
         result = await supabase
           .from("passes")
           .insert(passData);
       }
 
-      if (result.error) throw result.error;
+      console.log("Database operation result:", result);
 
+      if (result.error) {
+        console.error("Database error:", result.error);
+        throw result.error;
+      }
+
+      console.log("Save operation completed successfully!");
       toast({
         title: "Success",
         description: editingPass ? "Business card updated successfully!" : "Business card saved successfully!",
@@ -159,10 +180,10 @@ const Index = () => {
       setShowDashboard(true);
       setEditingPass(null);
     } catch (error) {
-      console.error("Error saving pass:", error);
+      console.error("Save operation failed:", error);
       toast({
         title: "Error",
-        description: "Failed to save business card",
+        description: `Failed to save business card: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
