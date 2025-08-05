@@ -86,7 +86,7 @@ export function Dashboard({ onCreateNew, onEditPass }: DashboardProps) {
         
         toast({
           title: "Download Started",
-          description: "Your .pkpass file is being downloaded",
+          description: "Your business card file is being downloaded",
         });
       } else {
         throw new Error(data?.message || 'Unknown error occurred');

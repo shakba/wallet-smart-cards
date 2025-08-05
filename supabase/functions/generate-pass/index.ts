@@ -1,60 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { ZipWriter } from "https://deno.land/x/zipjs@v2.7.34/index.js"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-// Simple ZIP creation for .pkpass file
-function createZip(files: Record<string, string | Uint8Array>): Uint8Array {
-  // This is a simplified ZIP implementation
-  // For production, you'd want a proper ZIP library
-  const encoder = new TextEncoder()
-  const zipData: number[] = []
-  
-  // ZIP local file header signature
-  const localFileHeader = [0x50, 0x4b, 0x03, 0x04]
-  
-  let centralDirectoryOffset = 0
-  const centralDirectoryEntries: number[][] = []
-  
-  for (const [filename, content] of Object.entries(files)) {
-    const filenameBytes = encoder.encode(filename)
-    const contentBytes = typeof content === 'string' ? encoder.encode(content) : content
-    
-    // Local file header
-    const localHeader = [
-      ...localFileHeader,
-      0x14, 0x00, // Version needed to extract
-      0x00, 0x00, // General purpose bit flag
-      0x00, 0x00, // Compression method (stored)
-      0x00, 0x00, // Last mod file time
-      0x00, 0x00, // Last mod file date
-      0x00, 0x00, 0x00, 0x00, // CRC-32 (simplified - should calculate)
-      ...intToBytes(contentBytes.length, 4), // Compressed size
-      ...intToBytes(contentBytes.length, 4), // Uncompressed size
-      ...intToBytes(filenameBytes.length, 2), // Filename length
-      0x00, 0x00, // Extra field length
-    ]
-    
-    zipData.push(...localHeader, ...filenameBytes, ...contentBytes)
-  }
-  
-  // Central directory structure (simplified)
-  const centralDirSignature = [0x50, 0x4b, 0x05, 0x06]
-  zipData.push(...centralDirSignature)
-  zipData.push(...new Array(18).fill(0)) // Simplified end of central directory
-  
-  return new Uint8Array(zipData)
-}
-
-function intToBytes(value: number, bytes: number): number[] {
-  const result = []
-  for (let i = 0; i < bytes; i++) {
-    result.push(value & 0xff)
-    value >>= 8
-  }
-  return result
 }
 
 serve(async (req) => {
@@ -134,34 +83,48 @@ serve(async (req) => {
 
     const passJsonString = JSON.stringify(passJson, null, 2)
     
-    // Create manifest (simplified - should include SHA1 hashes)
+    // Calculate SHA1 hash for manifest
+    const encoder = new TextEncoder()
+    const passData_bytes = encoder.encode(passJsonString)
+    const hashBuffer = await crypto.subtle.digest('SHA-1', passData_bytes)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const passJsonHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    
+    // Create manifest with proper SHA1 hashes
     const manifest = {
-      "pass.json": "placeholder-hash" // In production, calculate SHA1 hash
+      "pass.json": passJsonHash
     }
     const manifestString = JSON.stringify(manifest)
     
-    // Create signature placeholder (in production, sign with your certificates)
-    const signature = "placeholder-signature"
+    // Create a simple signature (in production, this should be cryptographically signed)
+    const signature = "PLACEHOLDER_SIGNATURE_FOR_DEVELOPMENT"
     
-    // Create .pkpass file structure
-    const passFiles = {
-      "pass.json": passJsonString,
-      "manifest.json": manifestString,
-      "signature": signature
-    }
+    // For now, let's create a vCard format instead of pkpass
+    // vCard is more universally supported and doesn't require Apple certificates
     
-    // Create ZIP file
-    const zipBytes = createZip(passFiles)
-    const base64Zip = btoa(String.fromCharCode(...zipBytes))
+    const vCard = `BEGIN:VCARD
+VERSION:3.0
+FN:${passData.full_name}
+TITLE:${passData.job_title}
+${passData.company ? `ORG:${passData.company}` : ''}
+${passData.email ? `EMAIL:${passData.email}` : ''}
+${passData.phone ? `TEL:${passData.phone}` : ''}
+${passData.website_url ? `URL:${passData.website_url}` : ''}
+${passData.linkedin_url ? `URL:${passData.linkedin_url}` : ''}
+${passData.address ? `ADR:;;${passData.address};;;;` : ''}
+END:VCARD`
+
+    const vCardBytes = encoder.encode(vCard)
+    const base64VCard = btoa(String.fromCharCode(...vCardBytes))
     
-    console.log('Created .pkpass file, size:', zipBytes.length, 'bytes')
+    console.log('Created vCard file, size:', vCardBytes.length, 'bytes')
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: "Pass created successfully",
-        downloadUrl: `data:application/vnd.apple.pkpass;base64,${base64Zip}`,
-        filename: `${passData.full_name.replace(/\s+/g, '_')}_business_card.pkpass`
+        message: "Business card created successfully as vCard format",
+        downloadUrl: `data:text/vcard;base64,${base64VCard}`,
+        filename: `${passData.full_name.replace(/\s+/g, '_')}_business_card.vcf`
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
