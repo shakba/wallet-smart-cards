@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -32,31 +32,24 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
 
   const {
     register,
-    watch,
     formState: { errors },
-    setValue,
+    getValues,
   } = useForm<BusinessCardFormData>({
     resolver: zodResolver(businessCardSchema),
     defaultValues: initialData,
     mode: "onChange",
   });
 
-  const formData = watch();
-
-  // Create a stable handleFormChange function with useCallback
-  const handleFormChange = useCallback(() => {
+  // Handle form data changes without useEffect to avoid infinite loops
+  const handleInputChange = () => {
+    const formData = getValues();
     const data = {
       ...formData,
       profileImage: profileImage || undefined,
       companyLogo: companyLogo || undefined,
     };
     onFormChange(data);
-  }, [formData, profileImage, companyLogo, onFormChange]);
-
-  // Trigger handleFormChange whenever form data changes
-  useEffect(() => {
-    handleFormChange();
-  }, [handleFormChange]);
+  };
 
   const handleFileUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -69,6 +62,16 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
       } else {
         setCompanyLogo(file);
       }
+      // Trigger form change after file state is updated
+      setTimeout(() => {
+        const formData = getValues();
+        const data = {
+          ...formData,
+          profileImage: type === "profile" ? file : (profileImage || undefined),
+          companyLogo: type === "logo" ? file : (companyLogo || undefined),
+        };
+        onFormChange(data);
+      }, 0);
     }
   };
 
@@ -91,6 +94,10 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
               id="fullName"
               {...register("fullName")}
               placeholder="John Doe"
+              onChange={(e) => {
+                register("fullName").onChange(e);
+                handleInputChange();
+              }}
             />
             {errors.fullName && (
               <p className="text-sm text-destructive mt-1">{errors.fullName.message}</p>
@@ -105,6 +112,10 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
               id="jobTitle"
               {...register("jobTitle")}
               placeholder="Software Engineer"
+              onChange={(e) => {
+                register("jobTitle").onChange(e);
+                handleInputChange();
+              }}
             />
             {errors.jobTitle && (
               <p className="text-sm text-destructive mt-1">{errors.jobTitle.message}</p>
@@ -123,6 +134,10 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
               id="company"
               {...register("company")}
               placeholder="Tech Corp"
+              onChange={(e) => {
+                register("company").onChange(e);
+                handleInputChange();
+              }}
             />
           </div>
 
@@ -136,6 +151,10 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
               type="email"
               {...register("email")}
               placeholder="john@example.com"
+              onChange={(e) => {
+                register("email").onChange(e);
+                handleInputChange();
+              }}
             />
             {errors.email && (
               <p className="text-sm text-destructive mt-1">{errors.email.message}</p>
@@ -153,6 +172,10 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
               id="phone"
               {...register("phone")}
               placeholder="+1 (555) 123-4567"
+              onChange={(e) => {
+                register("phone").onChange(e);
+                handleInputChange();
+              }}
             />
           </div>
 
@@ -165,6 +188,10 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
               id="linkedinUrl"
               {...register("linkedinUrl")}
               placeholder="https://linkedin.com/in/johndoe"
+              onChange={(e) => {
+                register("linkedinUrl").onChange(e);
+                handleInputChange();
+              }}
             />
             {errors.linkedinUrl && (
               <p className="text-sm text-destructive mt-1">{errors.linkedinUrl.message}</p>
@@ -182,6 +209,10 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
               id="websiteUrl"
               {...register("websiteUrl")}
               placeholder="https://johndoe.com"
+              onChange={(e) => {
+                register("websiteUrl").onChange(e);
+                handleInputChange();
+              }}
             />
             {errors.websiteUrl && (
               <p className="text-sm text-destructive mt-1">{errors.websiteUrl.message}</p>
@@ -197,6 +228,10 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
               id="address"
               {...register("address")}
               placeholder="123 Main St, City, State"
+              onChange={(e) => {
+                register("address").onChange(e);
+                handleInputChange();
+              }}
             />
           </div>
         </div>
