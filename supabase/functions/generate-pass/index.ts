@@ -125,7 +125,6 @@ serve(async (req) => {
         "Content-Disposition": `attachment; filename="${passData.full_name.replace(/\s+/g, '_')}_business_card.pkpass"`,
         "Content-Length": zipBytes.length.toString(),
       }
-      }
     })
 
   } catch (error) {
