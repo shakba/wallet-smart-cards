@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createHash, createSign } from "https://deno.land/std@0.168.0/node/crypto.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,6 +12,7 @@ serve(async (req) => {
 
   try {
     const { passData } = await req.json()
+    console.log('Generating pass for:', passData.full_name)
 
     // Get secrets from Supabase
     const certificatePem = Deno.env.get('CERTIFICATE_PEM')
@@ -20,18 +20,18 @@ serve(async (req) => {
     const wwdrPem = Deno.env.get('APPLE_WWDR_PEM')
     const keyPassphrase = Deno.env.get('KEY_PASSPHRASE')
 
+    console.log('Certificates available:', !!certificatePem, !!keyPem, !!wwdrPem)
+
     if (!certificatePem || !keyPem || !wwdrPem) {
       throw new Error('Missing required Apple certificates')
     }
 
-    // Create pass.json
+    // Create pass.json - simplified version for now
     const passJson = {
       formatVersion: 1,
       passTypeIdentifier: "pass.com.businesspass.card",
       serialNumber: passData.public_id,
-      teamIdentifier: "YOUR_TEAM_ID",
-      webServiceURL: `${req.headers.get('origin')}/api/passes`,
-      authenticationToken: passData.public_id,
+      teamIdentifier: "YOUR_TEAM_ID", // User needs to update this
       organizationName: passData.company || "Business Card",
       description: `${passData.full_name} - Business Card`,
       logoText: passData.company || passData.full_name,
@@ -93,40 +93,21 @@ serve(async (req) => {
     }
 
     const passJsonString = JSON.stringify(passJson, null, 2)
+    console.log('Pass JSON created, length:', passJsonString.length)
 
-    // Create manifest
-    const manifest = {
-      "pass.json": createHash('sha1').update(passJsonString).digest('hex')
+    // For now, return the pass data without signing
+    // TODO: Implement proper signing with Web Crypto API
+    const response = {
+      success: true,
+      message: "Pass generation is in development. Certificates are configured but signing needs Web Crypto API implementation.",
+      passData: passJson,
+      downloadUrl: `data:application/json;base64,${btoa(passJsonString)}`
     }
 
-    const manifestString = JSON.stringify(manifest, null, 2)
-
-    // Create signature
-    const signatureData = manifestString
-    const sign = createSign('SHA1')
-    sign.update(signatureData)
-    
-    // Import the private key
-    const privateKey = {
-      key: keyPem,
-      passphrase: keyPassphrase || undefined
-    }
-    
-    const signature = sign.sign(privateKey, 'base64')
-
-    // Create the pass bundle (simplified for demo)
-    const passBundle = {
-      'pass.json': passJsonString,
-      'manifest.json': manifestString,
-      'signature': signature
-    }
+    console.log('Returning response')
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        passBundle,
-        downloadUrl: `data:application/vnd.apple.pkpass;base64,${btoa(JSON.stringify(passBundle))}`
-      }),
+      JSON.stringify(response),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
