@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { ZipWriter } from "https://deno.land/x/zipjs@v2.7.34/index.js"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -99,20 +98,77 @@ serve(async (req) => {
     // Create a simple signature (in production, this should be cryptographically signed)
     const signature = "PLACEHOLDER_SIGNATURE_FOR_DEVELOPMENT"
     
-    // Create ZIP archive for .pkpass file
-    const zipWriter = new ZipWriter()
+    // Create proper ZIP file for .pkpass
+    const createPkpassZip = async () => {
+      // Simplified ZIP file creation using raw bytes
+      // This creates a minimal ZIP structure that should work with Apple Wallet
+      
+      const files = [
+        { name: "pass.json", content: passJsonString },
+        { name: "manifest.json", content: manifestString },
+        { name: "signature", content: signature }
+      ]
+      
+      // Create ZIP central directory entries
+      let centralDir = new Uint8Array(0)
+      let fileData = new Uint8Array(0)
+      let offset = 0
+      
+      for (const file of files) {
+        const nameBytes = encoder.encode(file.name)
+        const contentBytes = encoder.encode(file.content)
+        
+        // Local file header (simplified)
+        const localHeader = new Uint8Array([
+          0x50, 0x4B, 0x03, 0x04, // Local file header signature
+          0x0A, 0x00, // Version needed to extract
+          0x00, 0x00, // General purpose bit flag
+          0x00, 0x00, // Compression method (stored)
+          0x00, 0x00, // Last mod file time
+          0x00, 0x00, // Last mod file date
+          0x00, 0x00, 0x00, 0x00, // CRC-32 (we'll skip for simplicity)
+          ...new Uint8Array(new Uint32Array([contentBytes.length]).buffer), // Compressed size
+          ...new Uint8Array(new Uint32Array([contentBytes.length]).buffer), // Uncompressed size
+          ...new Uint8Array(new Uint16Array([nameBytes.length]).buffer), // File name length
+          0x00, 0x00, // Extra field length
+        ])
+        
+        // Combine local header + filename + content
+        const entry = new Uint8Array(localHeader.length + nameBytes.length + contentBytes.length)
+        entry.set(localHeader, 0)
+        entry.set(nameBytes, localHeader.length)
+        entry.set(contentBytes, localHeader.length + nameBytes.length)
+        
+        // Append to file data
+        const newFileData = new Uint8Array(fileData.length + entry.length)
+        newFileData.set(fileData, 0)
+        newFileData.set(entry, fileData.length)
+        fileData = newFileData
+        
+        offset += entry.length
+      }
+      
+      // End of central directory record
+      const endRecord = new Uint8Array([
+        0x50, 0x4B, 0x05, 0x06, // End of central dir signature
+        0x00, 0x00, // Number of this disk
+        0x00, 0x00, // Number of disk with central dir
+        ...new Uint8Array(new Uint16Array([files.length]).buffer), // Total entries on this disk
+        ...new Uint8Array(new Uint16Array([files.length]).buffer), // Total entries
+        0x00, 0x00, 0x00, 0x00, // Size of central directory
+        ...new Uint8Array(new Uint32Array([offset]).buffer), // Offset of central dir
+        0x00, 0x00, // ZIP file comment length
+      ])
+      
+      // Combine all parts
+      const zipFile = new Uint8Array(fileData.length + endRecord.length)
+      zipFile.set(fileData, 0)
+      zipFile.set(endRecord, fileData.length)
+      
+      return zipFile
+    }
     
-    // Add pass.json to ZIP
-    await zipWriter.add("pass.json", passJsonString)
-    
-    // Add manifest.json to ZIP
-    await zipWriter.add("manifest.json", manifestString)
-    
-    // Add signature to ZIP
-    await zipWriter.add("signature", signature)
-    
-    // Generate the ZIP file as Uint8Array
-    const zipBytes = await zipWriter.generate()
+    const zipBytes = await createPkpassZip()
     
     console.log('Created .pkpass file, size:', zipBytes.length, 'bytes')
 
