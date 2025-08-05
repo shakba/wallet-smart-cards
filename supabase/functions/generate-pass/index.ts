@@ -99,32 +99,32 @@ serve(async (req) => {
     // Create a simple signature (in production, this should be cryptographically signed)
     const signature = "PLACEHOLDER_SIGNATURE_FOR_DEVELOPMENT"
     
-    // For now, let's create a vCard format instead of pkpass
-    // vCard is more universally supported and doesn't require Apple certificates
+    // Create ZIP archive for .pkpass file
+    const zipWriter = new ZipWriter()
     
-    const vCard = `BEGIN:VCARD
-VERSION:3.0
-FN:${passData.full_name}
-TITLE:${passData.job_title}
-${passData.company ? `ORG:${passData.company}` : ''}
-${passData.email ? `EMAIL:${passData.email}` : ''}
-${passData.phone ? `TEL:${passData.phone}` : ''}
-${passData.website_url ? `URL:${passData.website_url}` : ''}
-${passData.linkedin_url ? `URL:${passData.linkedin_url}` : ''}
-${passData.address ? `ADR:;;${passData.address};;;;` : ''}
-END:VCARD`
-
-    const vCardBytes = encoder.encode(vCard)
-    const base64VCard = btoa(String.fromCharCode(...vCardBytes))
+    // Add pass.json to ZIP
+    await zipWriter.add("pass.json", passJsonString)
     
-    console.log('Created vCard file, size:', vCardBytes.length, 'bytes')
+    // Add manifest.json to ZIP
+    await zipWriter.add("manifest.json", manifestString)
+    
+    // Add signature to ZIP
+    await zipWriter.add("signature", signature)
+    
+    // Generate the ZIP file as Uint8Array
+    const zipBytes = await zipWriter.generate()
+    
+    console.log('Created .pkpass file, size:', zipBytes.length, 'bytes')
+    
+    // Convert to base64 for download
+    const base64Zip = btoa(String.fromCharCode(...zipBytes))
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: "Business card created successfully as vCard format",
-        downloadUrl: `data:text/vcard;base64,${base64VCard}`,
-        filename: `${passData.full_name.replace(/\s+/g, '_')}_business_card.vcf`
+        message: "Business card created successfully as .pkpass file",
+        downloadUrl: `data:application/vnd.apple.pkpass;base64,${base64Zip}`,
+        filename: `${passData.full_name.replace(/\s+/g, '_')}_business_card.pkpass`
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
