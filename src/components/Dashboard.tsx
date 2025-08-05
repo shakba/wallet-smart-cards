@@ -66,30 +66,40 @@ export function Dashboard({ onCreateNew, onEditPass }: DashboardProps) {
     try {
       console.log('Starting download for pass:', pass.full_name);
       
-      const { data, error } = await supabase.functions.invoke('generate-pass', {
+      const response = await supabase.functions.invoke('generate-pass', {
         body: { passData: pass }
       });
 
-      console.log('Function response:', { data, error });
+      console.log('Function response:', response);
 
-      if (error) {
-        console.error('Function error:', error);
-        throw error;
+      if (response.error) {
+        console.error('Function error:', response.error);
+        throw response.error;
       }
 
-      if (data?.success && data?.downloadUrl) {
+      // The response now contains the binary .pkpass file directly
+      if (response.data) {
+        // Create a blob from the binary data
+        const blob = new Blob([response.data], { 
+          type: 'application/vnd.apple.pkpass' 
+        });
+        
         // Create download link
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = data.downloadUrl;
-        link.download = data.filename || `${pass.full_name.replace(/\s+/g, '_')}_business_card.pkpass`;
+        link.href = url;
+        link.download = `${pass.full_name.replace(/\s+/g, '_')}_business_card.pkpass`;
         link.click();
+        
+        // Clean up
+        URL.revokeObjectURL(url);
         
         toast({
           title: "Download Started",
-          description: "Your business card file is being downloaded",
+          description: "Your .pkpass file is being downloaded",
         });
       } else {
-        throw new Error(data?.message || 'Unknown error occurred');
+        throw new Error('No data received from function');
       }
     } catch (error) {
       console.error('Download error:', error);

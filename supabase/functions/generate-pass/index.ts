@@ -115,22 +115,18 @@ serve(async (req) => {
     const zipBytes = await zipWriter.generate()
     
     console.log('Created .pkpass file, size:', zipBytes.length, 'bytes')
-    
-    // Convert to base64 for download
-    const base64Zip = btoa(String.fromCharCode(...zipBytes))
 
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: "Business card created successfully as .pkpass file",
-        downloadUrl: `data:application/vnd.apple.pkpass;base64,${base64Zip}`,
-        filename: `${passData.full_name.replace(/\s+/g, '_')}_business_card.pkpass`
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
-    )
+    // Return the .pkpass binary directly with proper headers
+    return new Response(zipBytes, {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/vnd.apple.pkpass",
+        "Content-Disposition": `attachment; filename="${passData.full_name.replace(/\s+/g, '_')}_business_card.pkpass"`,
+        "Content-Length": zipBytes.length.toString(),
+      }
+      }
+    })
 
   } catch (error) {
     console.error('Error generating pass:', error)
