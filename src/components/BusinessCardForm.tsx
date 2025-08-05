@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,21 +43,20 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
 
   const formData = watch();
 
-  // Watch for form changes and notify parent
-  const handleFormChange = () => {
+  // Create a stable handleFormChange function with useCallback
+  const handleFormChange = useCallback(() => {
     const data = {
       ...formData,
       profileImage: profileImage || undefined,
       companyLogo: companyLogo || undefined,
     };
     onFormChange(data);
-  };
+  }, [formData, profileImage, companyLogo, onFormChange]);
 
   // Trigger handleFormChange whenever form data changes
-  const watchedData = watch();
   useEffect(() => {
     handleFormChange();
-  }, [watchedData, profileImage, companyLogo]);
+  }, [handleFormChange]);
 
   const handleFileUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
