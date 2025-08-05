@@ -62,12 +62,34 @@ export function Dashboard({ onCreateNew, onEditPass }: DashboardProps) {
     window.open(`/profile/${pass.public_id}`, "_blank");
   };
 
-  const handleDownload = (pass: Pass) => {
-    // TODO: Implement pass download functionality
-    toast({
-      title: "Download",
-      description: "Download functionality will be implemented soon",
-    });
+  const handleDownload = async (pass: Pass) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-pass', {
+        body: { passData: pass }
+      });
+
+      if (error) throw error;
+
+      if (data?.downloadUrl) {
+        // Create download link
+        const link = document.createElement('a');
+        link.href = data.downloadUrl;
+        link.download = `${pass.full_name.replace(/\s+/g, '_')}_business_card.pkpass`;
+        link.click();
+        
+        toast({
+          title: "Download Started",
+          description: "Your Apple Wallet pass is being downloaded",
+        });
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download Failed", 
+        description: "Failed to generate Apple Wallet pass",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSignOut = async () => {
