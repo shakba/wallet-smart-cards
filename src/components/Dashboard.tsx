@@ -81,12 +81,12 @@ export function Dashboard({ onCreateNew, onEditPass }: DashboardProps) {
         // Create download link
         const link = document.createElement('a');
         link.href = data.downloadUrl;
-        link.download = `${pass.full_name.replace(/\s+/g, '_')}_business_card.json`;
+        link.download = data.filename || `${pass.full_name.replace(/\s+/g, '_')}_business_card.pkpass`;
         link.click();
         
         toast({
           title: "Download Started",
-          description: "Your business card data has been downloaded",
+          description: "Your .pkpass file is being downloaded",
         });
       } else {
         throw new Error(data?.message || 'Unknown error occurred');
