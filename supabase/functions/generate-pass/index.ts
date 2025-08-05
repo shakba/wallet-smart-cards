@@ -19,7 +19,7 @@ serve(async (req) => {
       formatVersion: 1,
       passTypeIdentifier: "pass.com.businesspass.card",
       serialNumber: passData.public_id,
-      teamIdentifier: "YOUR_TEAM_ID", // TODO: Update with actual team ID
+      teamIdentifier: Deno.env.get('APPLE_TEAM_ID') || "YOUR_TEAM_ID",
       organizationName: passData.company || "Business Card",
       description: `${passData.full_name} - Business Card`,
       logoText: passData.company || passData.full_name,
