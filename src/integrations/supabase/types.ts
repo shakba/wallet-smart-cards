@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       passes: {
         Row: {
+          address: string | null
           company: string | null
           company_logo_url: string | null
           created_at: string
@@ -34,6 +35,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          address?: string | null
           company?: string | null
           company_logo_url?: string | null
           created_at?: string
@@ -52,6 +54,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          address?: string | null
           company?: string | null
           company_logo_url?: string | null
           created_at?: string
