@@ -73,7 +73,8 @@ const Index = () => {
   const uploadFile = async (file: File, bucket: string): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${crypto.randomUUID()}.${fileExt}`;
-    const filePath = `${fileName}`;
+    // Create user-specific folder path
+    const filePath = `${user!.id}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from(bucket)
@@ -81,7 +82,7 @@ const Index = () => {
 
     if (uploadError) {
       console.error(`Error uploading ${bucket}:`, uploadError);
-      return null;
+      throw new Error(`Failed to upload ${bucket}: ${uploadError.message}`);
     }
 
     const { data } = supabase.storage
