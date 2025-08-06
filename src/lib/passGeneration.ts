@@ -88,6 +88,11 @@ export const convertPassToApiFormat = async (pass: any): Promise<PassData> => {
     jobTitle: pass.job_title,
   };
 
+  // Add QR code URL pointing to personal profile page
+  if (pass.public_id) {
+    apiData.qrCodeUrl = `${window.location.origin}/profile/${pass.public_id}`;
+  }
+
   // Add optional fields
   if (pass.company) apiData.company = pass.company;
   if (pass.email) apiData.email = pass.email;
