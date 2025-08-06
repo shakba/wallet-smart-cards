@@ -44,14 +44,26 @@ export const fileToBase64 = (file: File): Promise<string> => {
 // Generate Apple Wallet Pass using external API
 export const generateBusinessCard = async (formData: PassData): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('Generating business card with data:', formData);
+    // Convert HEX colors to RGB format if provided
+    const processedData = { ...formData };
+    if (processedData.backgroundColor && processedData.backgroundColor.startsWith('#')) {
+      processedData.backgroundColor = hexToRgb(processedData.backgroundColor);
+    }
+    if (processedData.foregroundColor && processedData.foregroundColor.startsWith('#')) {
+      processedData.foregroundColor = hexToRgb(processedData.foregroundColor);
+    }
+    if (processedData.labelColor && processedData.labelColor.startsWith('#')) {
+      processedData.labelColor = hexToRgb(processedData.labelColor);
+    }
+    
+    console.log('Generating business card with data:', processedData);
     
     const response = await fetch('https://itamar-wallet-project.vercel.app/api/generate-pass', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(formData)
+      body: JSON.stringify(processedData)
     });
 
     if (!response.ok) {

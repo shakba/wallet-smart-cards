@@ -22,6 +22,9 @@ interface FormData {
   address?: string;
   profileImage?: File;
   companyLogo?: File;
+  backgroundColor?: string;
+  foregroundColor?: string;
+  labelColor?: string;
 }
 
 const Index = () => {
@@ -125,6 +128,11 @@ const Index = () => {
       if (formData.linkedinUrl) apiData.linkedinUrl = formData.linkedinUrl;
       if (formData.websiteUrl) apiData.websiteUrl = formData.websiteUrl;
       if (formData.address) apiData.address = formData.address;
+
+      // Add color fields
+      if (formData.backgroundColor) apiData.backgroundColor = formData.backgroundColor;
+      if (formData.foregroundColor) apiData.foregroundColor = formData.foregroundColor;
+      if (formData.labelColor) apiData.labelColor = formData.labelColor;
 
       // Convert images to Base64
       if (formData.profileImage) {

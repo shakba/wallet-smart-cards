@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, User, Building, Phone, Mail, Globe, MapPin, LinkedinIcon } from "lucide-react";
+import { Upload, User, Building, Phone, Mail, Globe, MapPin, LinkedinIcon, Palette } from "lucide-react";
 
 const businessCardSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -17,18 +17,30 @@ const businessCardSchema = z.object({
   linkedinUrl: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
   websiteUrl: z.string().url("Invalid website URL").optional().or(z.literal("")),
   address: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  foregroundColor: z.string().optional(),
+  labelColor: z.string().optional(),
 });
 
 type BusinessCardFormData = z.infer<typeof businessCardSchema>;
 
 interface BusinessCardFormProps {
-  onFormChange: (data: BusinessCardFormData & { profileImage?: File; companyLogo?: File }) => void;
+  onFormChange: (data: BusinessCardFormData & { 
+    profileImage?: File; 
+    companyLogo?: File;
+    backgroundColor?: string;
+    foregroundColor?: string;
+    labelColor?: string;
+  }) => void;
   initialData?: Partial<BusinessCardFormData>;
 }
 
 export function BusinessCardForm({ onFormChange, initialData }: BusinessCardFormProps) {
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [companyLogo, setCompanyLogo] = useState<File | null>(null);
+  const [backgroundColor, setBackgroundColor] = useState<string>("#ffffff");
+  const [foregroundColor, setForegroundColor] = useState<string>("#000000");
+  const [labelColor, setLabelColor] = useState<string>("#666666");
 
   const {
     register,
@@ -47,6 +59,9 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
       ...formData,
       profileImage: profileImage || undefined,
       companyLogo: companyLogo || undefined,
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
+      labelColor: labelColor,
     };
     onFormChange(data);
   };
@@ -69,6 +84,9 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
           ...formData,
           profileImage: type === "profile" ? file : (profileImage || undefined),
           companyLogo: type === "logo" ? file : (companyLogo || undefined),
+          backgroundColor: backgroundColor,
+          foregroundColor: foregroundColor,
+          labelColor: labelColor,
         };
         onFormChange(data);
       }, 0);
@@ -272,6 +290,99 @@ export function BusinessCardForm({ onFormChange, initialData }: BusinessCardForm
                 {companyLogo.name}
               </p>
             )}
+          </div>
+        </div>
+
+        {/* Color Selection */}
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2 text-base font-medium">
+            <Palette className="h-5 w-5" />
+            Card Colors
+          </Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="backgroundColor" className="text-sm">
+                Background Color
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="backgroundColor"
+                  type="color"
+                  value={backgroundColor}
+                  onChange={(e) => {
+                    setBackgroundColor(e.target.value);
+                    handleInputChange();
+                  }}
+                  className="w-16 h-10 p-1 border cursor-pointer"
+                />
+                <Input
+                  type="text"
+                  value={backgroundColor}
+                  onChange={(e) => {
+                    setBackgroundColor(e.target.value);
+                    handleInputChange();
+                  }}
+                  className="flex-1"
+                  placeholder="#ffffff"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="foregroundColor" className="text-sm">
+                Text Color
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="foregroundColor"
+                  type="color"
+                  value={foregroundColor}
+                  onChange={(e) => {
+                    setForegroundColor(e.target.value);
+                    handleInputChange();
+                  }}
+                  className="w-16 h-10 p-1 border cursor-pointer"
+                />
+                <Input
+                  type="text"
+                  value={foregroundColor}
+                  onChange={(e) => {
+                    setForegroundColor(e.target.value);
+                    handleInputChange();
+                  }}
+                  className="flex-1"
+                  placeholder="#000000"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="labelColor" className="text-sm">
+                Label Color
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="labelColor"
+                  type="color"
+                  value={labelColor}
+                  onChange={(e) => {
+                    setLabelColor(e.target.value);
+                    handleInputChange();
+                  }}
+                  className="w-16 h-10 p-1 border cursor-pointer"
+                />
+                <Input
+                  type="text"
+                  value={labelColor}
+                  onChange={(e) => {
+                    setLabelColor(e.target.value);
+                    handleInputChange();
+                  }}
+                  className="flex-1"
+                  placeholder="#666666"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>
