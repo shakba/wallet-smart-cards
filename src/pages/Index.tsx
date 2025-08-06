@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { LogIn, Save } from "lucide-react";
+import { LogIn, Save, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface FormData {
@@ -94,6 +94,67 @@ const Index = () => {
 
     console.log(`Public URL for ${bucket}:`, data.publicUrl);
     return data.publicUrl;
+  };
+
+  const handleGeneratePass = async () => {
+    if (!formData.fullName || !formData.jobTitle) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in your full name and job title",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      // Import utility functions
+      const { generateBusinessCard, fileToBase64 } = await import('@/lib/passGeneration');
+      
+      // Prepare API data
+      const apiData: any = {
+        fullName: formData.fullName,
+        jobTitle: formData.jobTitle,
+      };
+
+      // Add optional fields
+      if (formData.company) apiData.company = formData.company;
+      if (formData.email) apiData.email = formData.email;
+      if (formData.phone) apiData.phone = formData.phone;
+      if (formData.linkedinUrl) apiData.linkedinUrl = formData.linkedinUrl;
+      if (formData.websiteUrl) apiData.websiteUrl = formData.websiteUrl;
+      if (formData.address) apiData.address = formData.address;
+
+      // Convert images to Base64
+      if (formData.profileImage) {
+        apiData.profileImage = await fileToBase64(formData.profileImage);
+      }
+      if (formData.companyLogo) {
+        apiData.companyLogo = await fileToBase64(formData.companyLogo);
+      }
+
+      // Generate and download the pass
+      const result = await generateBusinessCard(apiData);
+      
+      if (result.success) {
+        toast({
+          title: "Pass Generated!",
+          description: "Your .pkpass file has been downloaded",
+        });
+      } else {
+        throw new Error(result.error || 'Failed to generate pass');
+      }
+    } catch (error) {
+      console.error('Generate pass error:', error);
+      toast({
+        title: "Generation Failed",
+        description: `Failed to generate pass: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSavePass = async () => {
@@ -252,7 +313,7 @@ const Index = () => {
                 <CardHeader>
                   <CardTitle>Save Your Business Card</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-2">
                   <Button 
                     onClick={handleSavePass} 
                     className="w-full" 
@@ -260,6 +321,15 @@ const Index = () => {
                   >
                     <Save className="h-4 w-4 mr-2" />
                     {saving ? "Saving..." : editingPass ? "Update Pass" : "Save Pass"}
+                  </Button>
+                  <Button 
+                    onClick={handleGeneratePass} 
+                    variant="outline"
+                    className="w-full" 
+                    disabled={saving || !formData.fullName || !formData.jobTitle}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generate Apple Wallet Pass
                   </Button>
                 </CardContent>
               </Card>
@@ -280,13 +350,21 @@ const Index = () => {
             {!user && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Save Your Business Card</CardTitle>
+                  <CardTitle>Generate Apple Wallet Pass</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground mb-4">
+                <CardContent className="text-center space-y-2">
+                  <Button 
+                    onClick={handleGeneratePass} 
+                    className="w-full"
+                    disabled={saving || !formData.fullName || !formData.jobTitle}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Generate Pass
+                  </Button>
+                  <p className="text-muted-foreground text-sm">
                     Sign in to save your business card and create multiple cards
                   </p>
-                  <Button onClick={() => navigate("/auth")} className="w-full">
+                  <Button onClick={() => navigate("/auth")} variant="outline" className="w-full">
                     <LogIn className="h-4 w-4 mr-2" />
                     Sign In to Save
                   </Button>

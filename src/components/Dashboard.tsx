@@ -66,40 +66,22 @@ export function Dashboard({ onCreateNew, onEditPass }: DashboardProps) {
     try {
       console.log('Starting download for pass:', pass.full_name);
       
-      const response = await supabase.functions.invoke('generate-pass', {
-        body: { passData: pass }
-      });
-
-      console.log('Function response:', response);
-
-      if (response.error) {
-        console.error('Function error:', response.error);
-        throw response.error;
-      }
-
-      // The response now contains the binary .pkpass file directly
-      if (response.data) {
-        // Create a blob from the binary data
-        const blob = new Blob([response.data], { 
-          type: 'application/vnd.apple.pkpass' 
-        });
-        
-        // Create download link
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${pass.full_name.replace(/\s+/g, '_')}_business_card.pkpass`;
-        link.click();
-        
-        // Clean up
-        URL.revokeObjectURL(url);
-        
+      // Import the utility functions
+      const { convertPassToApiFormat, generateBusinessCard } = await import('@/lib/passGeneration');
+      
+      // Convert pass data to API format
+      const apiData = await convertPassToApiFormat(pass);
+      
+      // Generate and download the pass
+      const result = await generateBusinessCard(apiData);
+      
+      if (result.success) {
         toast({
           title: "Download Started",
           description: "Your .pkpass file is being downloaded",
         });
       } else {
-        throw new Error('No data received from function');
+        throw new Error(result.error || 'Failed to generate pass');
       }
     } catch (error) {
       console.error('Download error:', error);
