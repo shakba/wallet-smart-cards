@@ -70,6 +70,9 @@ const Index = () => {
       linkedinUrl: pass.linkedin_url || "",
       websiteUrl: pass.website_url || "",
       address: pass.address || "",
+      backgroundColor: pass.pass_data_json?.backgroundColor || "#ffffff",
+      foregroundColor: pass.pass_data_json?.foregroundColor || "#000000", 
+      labelColor: pass.pass_data_json?.labelColor || "#666666",
     });
   };
 
@@ -221,6 +224,11 @@ const Index = () => {
         address: formData.address || null,
         profile_image_url: profileImageUrl,
         company_logo_url: companyLogoUrl,
+        pass_data_json: {
+          backgroundColor: formData.backgroundColor,
+          foregroundColor: formData.foregroundColor,
+          labelColor: formData.labelColor,
+        },
       };
 
       console.log("Saving to database with data:", passData);

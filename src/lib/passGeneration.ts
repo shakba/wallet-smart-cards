@@ -113,6 +113,13 @@ export const convertPassToApiFormat = async (pass: any): Promise<PassData> => {
   if (pass.website_url) apiData.websiteUrl = pass.website_url;
   if (pass.address) apiData.address = pass.address;
 
+  // Add color fields from pass_data_json
+  if (pass.pass_data_json) {
+    if (pass.pass_data_json.backgroundColor) apiData.backgroundColor = pass.pass_data_json.backgroundColor;
+    if (pass.pass_data_json.foregroundColor) apiData.foregroundColor = pass.pass_data_json.foregroundColor;
+    if (pass.pass_data_json.labelColor) apiData.labelColor = pass.pass_data_json.labelColor;
+  }
+
   // Handle profile image URL - convert to Base64 if it's a URL
   if (pass.profile_image_url) {
     try {
